@@ -1,0 +1,78 @@
+# Example: Inline SQL (default)
+apiVersion: kubequery.cloudnexus.io/v1alpha1
+kind: PostgresQuery
+metadata:
+  labels:
+    app.kubernetes.io/name: kubequery
+    app.kubernetes.io/managed-by: kustomize
+  name: inline-sql-example
+spec:
+  connection:
+    host: mydb.example.com
+    port: 5432
+    database: mydb
+    user: myuser
+    passwordSecretRef:
+      name: mydb-secret
+      key: password
+    ssl:
+      mode: require
+      caSecretRef:
+        name: mydb-ca
+        key: ca.crt
+  sql: |
+    -- Inline SQL, can be many lines
+    CREATE TABLE foo (id SERIAL PRIMARY KEY, name TEXT);
+    INSERT INTO foo (name) VALUES ('bar');
+  options:
+    timeoutSeconds: 30
+---
+# Example: SQL from ConfigMap
+apiVersion: kubequery.cloudnexus.io/v1alpha1
+kind: PostgresQuery
+metadata:
+  name: configmap-sql-example
+spec:
+  connection:
+    host: mydb.example.com
+    port: 5432
+    database: mydb
+    user: myuser
+    passwordSecretRef:
+      name: mydb-secret
+      key: password
+    ssl:
+      mode: require
+      caSecretRef:
+        name: mydb-ca
+        key: ca.crt
+  sqlConfigMapRef:
+    name: my-sql-script
+    key: script.sql
+  options:
+    timeoutSeconds: 60
+---
+# Example: SQL from Secret
+apiVersion: kubequery.cloudnexus.io/v1alpha1
+kind: PostgresQuery
+metadata:
+  name: secret-sql-example
+spec:
+  connection:
+    host: mydb.example.com
+    port: 5432
+    database: mydb
+    user: myuser
+    passwordSecretRef:
+      name: mydb-secret
+      key: password
+    ssl:
+      mode: require
+      caSecretRef:
+        name: mydb-ca
+        key: ca.crt
+  sqlSecretRef:
+    name: my-sql-secret
+    key: script.sql
+  options:
+    timeoutSeconds: 60
