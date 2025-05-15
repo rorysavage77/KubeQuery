@@ -1,0 +1,4 @@
+{{- if .Values.crds.install }}
+{{- $crd := .Files.Get "crds/kubequery.cloudnexus.io_postgresqueries.yaml" }}
+{{ $crd }}
+{{- end }}

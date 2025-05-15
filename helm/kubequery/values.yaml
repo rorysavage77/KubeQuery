@@ -1,0 +1,22 @@
+image:
+  repository: your-repo/kubequery
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+resources: {}
+
+rbac:
+  create: true
+
+serviceAccount:
+  create: true
+  name: ""
+
+crds:
+  install: true
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
