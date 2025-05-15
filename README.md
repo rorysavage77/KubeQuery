@@ -398,3 +398,18 @@ spec:
 - Else, the inline `sql` field is used.
 
 **This allows you to manage very large or sensitive SQL scripts outside the CR, keeping manifests clean and secure.**
+
+---
+
+## Helm Chart
+
+KubeQuery comes with a fully supported Helm chart for easy installation and management in Kubernetes clusters. The chart is located in [`helm/kubequery`](./helm/kubequery).
+
+- **Recommended installation method:** The Helm chart is the preferred way to deploy KubeQuery, as it manages all resources, RBAC, and CRDs in a repeatable, configurable manner.
+- **Chart documentation:** See [`helm/kubequery/README.md`](./helm/kubequery/README.md) for installation, upgrade, and configuration instructions.
+- **Quick start:**
+  ```sh
+  helm install my-kubequery ./helm/kubequery \
+    --set image.repository=your-repo/kubequery \
+    --set image.tag=latest
+  ```
