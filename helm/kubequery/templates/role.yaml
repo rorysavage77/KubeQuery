@@ -1,0 +1,16 @@
+{{- if .Values.rbac.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "kubequery.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "kubequery.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+rules:
+  - apiGroups: ["kubequery.cloudnexus.io"]
+    resources: ["postgresqueries", "postgresqueries/status", "postgresqueries/finalizers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps"]
+    verbs: ["get", "list"]
+{{- end }}
