@@ -1,0 +1,14 @@
+apiVersion: v2
+name: ui-service
+version: 0.1.0
+description: Web UI for KubeQuery to login and submit SQL to target DB
+appVersion: "0.1.0"
+keywords:
+  - ui
+  - sql
+  - postgres
+  - web
+home: https://github.com/rsavage/KubeQuery
+maintainers:
+  - name: rorysavage77
+    email: your-email@example.com
