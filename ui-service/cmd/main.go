@@ -9,6 +9,14 @@ import (
 func main() {
 	r := gin.Default()
 
+	// Serve static files (adjust the directory as needed)
+	r.Static("/static", "./static")
+
+	// Serve index.html for the root and all other GET requests (SPA fallback)
+	r.NoRoute(func(c *gin.Context) {
+		c.File("./static/index.html")
+	})
+
 	r.POST("/login", loginHandler)
 	r.POST("/submit-sql", submitSQLHandler)
 
