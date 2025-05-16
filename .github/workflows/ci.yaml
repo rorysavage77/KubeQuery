@@ -35,14 +35,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push ${{ matrix.service }}
-        uses: docker/build-push-action@v5
-        with:
-          context: ${{ matrix.service == 'kubequery' && '.' || './ui-service' }}
-          file: ${{ matrix.service == 'kubequery' && 'Dockerfile' || './ui-service/Dockerfile' }}
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/kubequery-${{ matrix.service }}:latest
-          platforms: linux/amd64,linux/arm64
-          build-args: |
-            TARGETOS
-            TARGETARCH
+      - name: Build and push multi-arch Docker image
+        run: |
+          if [ "${{ matrix.service }}" = "kubequery" ]; then
+            docker buildx build \
+              --platform linux/amd64,linux/arm64 \
+              --tag ghcr.io/${{ github.repository_owner }}/kubequery-kubequery:latest \
+              --push .
+          else
+            docker buildx build \
+              --platform linux/amd64,linux/arm64 \
+              --tag ghcr.io/${{ github.repository_owner }}/kubequery-ui-service:latest \
+              --push ./ui-service
+          fi
