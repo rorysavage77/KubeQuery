@@ -1,5 +1,5 @@
 image:
-  repository: your-repo/kubequery
+  repository: ghcr.io/rorysavage77/kubequery-kubequery
   tag: latest
   pullPolicy: IfNotPresent
 
