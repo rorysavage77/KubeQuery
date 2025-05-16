@@ -1,0 +1,16 @@
+image:
+  repository: your-repo/ui-service
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+resources: {}
+
+service:
+  type: ClusterIP
+  port: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
