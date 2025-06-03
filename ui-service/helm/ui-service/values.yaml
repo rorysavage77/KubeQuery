@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/rorysavage77/kubequery-ui-service
-  tag: latest
+  tag: debug
   pullPolicy: IfNotPresent
 
 replicaCount: 1

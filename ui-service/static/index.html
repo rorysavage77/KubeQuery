@@ -1,1 +1,144 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><link rel="icon" href="./favicon.ico"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#000000"/><meta name="description" content="Web site created using create-react-app"/><link rel="apple-touch-icon" href="./logo192.png"/><link rel="manifest" href="./manifest.json"/><title>React App</title><script defer="defer" src="./static/js/main.d8e735a1.js"></script><link href="./static/css/main.f855e6bc.css" rel="stylesheet"></head><body><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KubeQuery UI</title>
+  <style>
+    body { font-family: sans-serif; background: #f7fafc; color: #222; min-height: 100vh; margin: 0; }
+    .container { max-width: 600px; margin: 40px auto; background: #fff; padding: 2rem 2.5rem; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); }
+    h1 { color: #2b6cb0; margin-bottom: 0.5em; }
+    label { display: block; margin: 1em 0 0.3em; font-weight: 600; }
+    input, textarea, button { font-size: 1rem; padding: 0.5em; border-radius: 6px; border: 1px solid #cbd5e1; width: 100%; box-sizing: border-box; }
+    button { background: #2b6cb0; color: #fff; border: none; margin-top: 1em; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #225ea8; }
+    .error { color: #c53030; margin: 1em 0; }
+    .success { color: #2f855a; margin: 1em 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1.5em; }
+    th, td { border: 1px solid #e2e8f0; padding: 0.5em 0.7em; text-align: left; }
+    th { background: #ebf8ff; }
+    .logout { float: right; background: #c53030; color: #fff; margin-top: 0; }
+    @media (max-width: 700px) { .container { padding: 1rem; } }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <h1>KubeQuery UI</h1>
+    <div id="login-section" style="display:none;">
+      <form id="login-form">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required autocomplete="username">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password">
+        <button type="submit">Login</button>
+        <div class="error" id="login-error"></div>
+      </form>
+    </div>
+    <div id="main-section" style="display:none;">
+      <button class="logout" id="logout-btn" title="Logout">Logout</button>
+      <form id="query-form">
+        <label for="sql">SQL Query</label>
+        <textarea id="sql" name="sql" rows="4" required placeholder="SELECT * FROM my_table;"></textarea>
+        <button type="submit">Run Query</button>
+        <div class="error" id="query-error"></div>
+      </form>
+      <div id="query-result"></div>
+    </div>
+  </div>
+  <script>
+    // --- Simple session management ---
+    function isLoggedIn() {
+      return !!localStorage.getItem('kq_session');
+    }
+    function setSession(val) {
+      localStorage.setItem('kq_session', val);
+    }
+    function clearSession() {
+      localStorage.removeItem('kq_session');
+    }
+
+    function showLogin() {
+      document.getElementById('login-section').style.display = '';
+      document.getElementById('main-section').style.display = 'none';
+    }
+    function showMain() {
+      document.getElementById('login-section').style.display = 'none';
+      document.getElementById('main-section').style.display = '';
+    }
+
+    // --- Login logic ---
+    document.getElementById('login-form').onsubmit = async function(e) {
+      e.preventDefault();
+      document.getElementById('login-error').textContent = '';
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(err || 'Login failed');
+        }
+        setSession('1'); // Just a flag; real session is managed by backend/cookie
+        showMain();
+      } catch (err) {
+        document.getElementById('login-error').textContent = err.message || 'Login failed';
+      }
+    };
+
+    // --- Query logic ---
+    document.getElementById('query-form').onsubmit = async function(e) {
+      e.preventDefault();
+      document.getElementById('query-error').textContent = '';
+      document.getElementById('query-result').innerHTML = '';
+      const sql = document.getElementById('sql').value;
+      try {
+        const res = await fetch('/submit-sql', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sql })
+        });
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(err || 'Query failed');
+        }
+        const data = await res.json();
+        renderResult(data);
+      } catch (err) {
+        document.getElementById('query-error').textContent = err.message || 'Query failed';
+      }
+    };
+
+    // --- Logout logic ---
+    document.getElementById('logout-btn').onclick = function() {
+      clearSession();
+      showLogin();
+    };
+
+    // --- Render query results ---
+    function renderResult(data) {
+      if (!data || !Array.isArray(data.rows) || data.rows.length === 0) {
+        document.getElementById('query-result').innerHTML = '<div class="success">No results.</div>';
+        return;
+      }
+      const cols = Object.keys(data.rows[0]);
+      let html = '<table><thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+      for (const row of data.rows) {
+        html += '<tr>' + cols.map(c => `<td>${row[c]}</td>`).join('') + '</tr>';
+      }
+      html += '</tbody></table>';
+      document.getElementById('query-result').innerHTML = html;
+    }
+
+    // --- On load: show correct section ---
+    if (isLoggedIn()) {
+      showMain();
+    } else {
+      showLogin();
+    }
+  </script>
+</body>
+</html>
