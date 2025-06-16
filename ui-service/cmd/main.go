@@ -1,16 +1,53 @@
 package main
 
 import (
-	"net/http"
-
+	"database/sql"
+	"fmt"
 	"mime"
+	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/lib/pq"
 )
+
+var db *sql.DB
 
 func main() {
 	// Ensure .js files are served with the correct MIME type
 	mime.AddExtensionType(".js", "application/javascript")
+
+	// Read DB config from env
+	pgHost := os.Getenv("PGHOST")
+	pgPort := os.Getenv("PGPORT")
+	pgUser := os.Getenv("PGUSER")
+	pgPass := os.Getenv("PGPASSWORD")
+	pgDB := os.Getenv("PGDATABASE")
+	if pgHost == "" {
+		pgHost = "kubequery-postgres"
+	}
+	if pgPort == "" {
+		pgPort = "5432"
+	}
+	if pgUser == "" {
+		pgUser = "kquser"
+	}
+	if pgPass == "" {
+		pgPass = "changeme"
+	}
+	if pgDB == "" {
+		pgDB = "kqdb"
+	}
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", pgHost, pgPort, pgUser, pgPass, pgDB)
+
+	var err error
+	db, err = sql.Open("postgres", connStr)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to open DB: %v", err))
+	}
+	if err = db.Ping(); err != nil {
+		panic(fmt.Sprintf("Failed to connect to DB: %v", err))
+	}
 
 	r := gin.Default()
 
@@ -69,12 +106,11 @@ type SQLRequest struct {
 }
 
 type SQLResponse struct {
-	Result string `json:"result,omitempty"`
-	Error  string `json:"error,omitempty"`
+	Rows  []map[string]interface{} `json:"rows,omitempty"`
+	Error string                   `json:"error,omitempty"`
 }
 
 func submitSQLHandler(c *gin.Context) {
-	// TODO: Validate JWT from Authorization header
 	var req SQLRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, SQLResponse{Error: "Invalid request"})
@@ -84,6 +120,39 @@ func submitSQLHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, SQLResponse{Error: "SQL is required"})
 		return
 	}
-	// TODO: Integrate with KubeQuery controller or AI
-	c.JSON(http.StatusOK, SQLResponse{Result: "SQL executed (stub): " + req.SQL})
+	rows, err := db.Query(req.SQL)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, SQLResponse{Error: err.Error()})
+		return
+	}
+	defer rows.Close()
+	cols, err := rows.Columns()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, SQLResponse{Error: err.Error()})
+		return
+	}
+	results := []map[string]interface{}{}
+	for rows.Next() {
+		vals := make([]interface{}, len(cols))
+		valPtrs := make([]interface{}, len(cols))
+		for i := range vals {
+			valPtrs[i] = &vals[i]
+		}
+		if err := rows.Scan(valPtrs...); err != nil {
+			c.JSON(http.StatusInternalServerError, SQLResponse{Error: err.Error()})
+			return
+		}
+		rowMap := map[string]interface{}{}
+		for i, col := range cols {
+			v := vals[i]
+			b, ok := v.([]byte)
+			if ok {
+				rowMap[col] = string(b)
+			} else {
+				rowMap[col] = v
+			}
+		}
+		results = append(results, rowMap)
+	}
+	c.JSON(http.StatusOK, SQLResponse{Rows: results})
 }

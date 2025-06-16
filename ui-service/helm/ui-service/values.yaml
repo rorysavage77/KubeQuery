@@ -14,3 +14,15 @@ service:
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+env:
+  - name: PGHOST
+    value: kubequery-postgres
+  - name: PGPORT
+    value: "5432"
+  - name: PGUSER
+    value: kquser
+  - name: PGPASSWORD
+    value: changeme
+  - name: PGDATABASE
+    value: kqdb
