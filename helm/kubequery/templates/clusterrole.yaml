@@ -1,0 +1,38 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubequery-manager-role
+rules:
+- apiGroups:
+  - kubequery.cloudnexus.io
+  resources:
+  - postgresqueries
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - kubequery.cloudnexus.io
+  resources:
+  - postgresqueries/status
+  verbs:
+  - get
+  - update
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubequery-manager-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: kubequery-kubequery
+  namespace: kubequery
+roleRef:
+  kind: ClusterRole
+  name: kubequery-manager-role
+  apiGroup: rbac.authorization.k8s.io
